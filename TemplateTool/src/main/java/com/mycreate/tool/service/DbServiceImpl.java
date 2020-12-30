@@ -4,10 +4,13 @@ import com.google.common.base.CaseFormat;
 import com.mycreate.tool.model.ColumnClass;
 import com.mycreate.tool.model.TableClass;
 import com.mycreate.tool.utils.DBUtils;
+import com.mycreate.tool.utils.LoggerUtils;
 import freemarker.cache.ClassTemplateLoader;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
+import org.apache.log4j.Logger;
+import org.apache.log4j.spi.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
@@ -21,6 +24,7 @@ import java.util.List;
 @Service
 public class DbServiceImpl implements DbService {
 
+    private Logger logger = LoggerUtils.getLogger();
     /**
      * 用户设置的包名，如com.mytext.demo
      */
@@ -126,7 +130,7 @@ public class DbServiceImpl implements DbService {
                 }
             }
         }catch (Exception e) {
-            System.out.println("创建代码失败！");
+            logger.error("创建代码失败！", e);
             e.printStackTrace();
             return null;
         }
@@ -135,7 +139,7 @@ public class DbServiceImpl implements DbService {
 
     private void doCreate(Template template,TableClass table, String path) {
         File file = new File(path);
-        System.out.println("文件路径：" + file.getPath());
+        logger.info("Path：" + path);
         if(!file.exists()) {
             file.mkdirs();
         }
@@ -150,15 +154,15 @@ public class DbServiceImpl implements DbService {
             streamWriter = new OutputStreamWriter(fos);
             template.process(table, streamWriter);
         }catch (IOException e) {
-            e.printStackTrace();
+            logger.error("IO异常！", e);
         } catch (TemplateException e) {
-            e.printStackTrace();
+            logger.error("模板格式不正确！" + e);
         } finally {
             try {
                 fos.close();
                 streamWriter.close();
             } catch (IOException e) {
-                e.printStackTrace();
+                logger.error("关闭IO流出错！", e);
             }
         }
     }

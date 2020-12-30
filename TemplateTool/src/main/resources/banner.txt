@@ -21,7 +21,7 @@ ${AnsiColor.BRIGHT_YELLOW}
             `  `             =YangYS=
 
      作者：YangYS
-     应用版本：1.0
+     应用版本：1.1.1
      Spring Boot 版本：${spring-boot.formatted-version}
 
 =============================================================================
