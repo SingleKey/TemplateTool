@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SpringBoot项目模板工具</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script><!--vue-->
+    <!-- 引入样式 element -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <!-- 引入组件库 element -->
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <!--axios-->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        window.onload = function (){
+            console.log("===页面初始化完成===");
+        }
+    </script>
+</head>
+<body>
+<div id="app">
+    <table style="border: #007aff solid 1px">
+        <tr>
+            <td><el-tag >数据库用户名：</el-tag></td>
+            <td><el-input size="small" v-model="db.username"></el-input></td>
+        </tr>
+        <tr>
+            <td><el-tag >数据库密码：</el-tag></td>
+            <td><el-input size="small" v-model="db.password"></el-input></td>
+        </tr>
+        <tr>
+            <td><el-tag >URL：</el-tag></td>
+            <td>
+                <el-input size="small" v-model="db.url">
+                    <template slot="prepend">jdbc:mysql://</template>
+                    <template slot="append">{{dt.append}}</template>
+                </el-input>
+            </td>
+        </tr>
+        <tr>
+            <td><el-tag >数据库版本：</el-tag></td>
+            <td>
+                <el-radio-group v-model="db.dbVersion">
+                    <el-radio :label=8 @change="targetAppend()">MySQL8.0+</el-radio>
+                    <el-radio :label=5 @change="targetAppend()">MySQL5.0+</el-radio>
+                </el-radio-group>
+
+            </td>
+        </tr>
+    </table>
+    <div id="initView" style="display: flex;margin-top: 20px;">
+        <el-button type="primary" size="medium" @click="connection()">连接数据库</el-button>
+        <el-button type="primary" size="medium" @click="reset()">清空</el-button>
+        <span style="margin-top: 7px;margin-left: 20px;color:#ff0000">{{dt.msg}}</span>
+    </div>
+    <div style="display: flex;margin-top: 20px;">
+        <span style="margin-top: 7px;">包名：</span>
+        <el-input v-model="db.config" size="small" style="width: 450px;margin-top: 5px;"></el-input>
+        <el-button type="primary" size="medium" @click="config()" style="margin-left: 30px;" >获取配置信息</el-button>
+        <span style="margin-top: 7px;margin-left: 20px;color:#ff0000">{{dt.tableData.msg}}</span>
+    </div>
+    <el-table
+            :data="dt.tableData.data"
+            height="240"
+            style="width: 500%;margin-top: 20px;">
+        <el-table-column type="index" width="50"> </el-table-column>
+        <el-table-column prop="tableName" label="数据表" width="250" >
+            <template slot-scope="scope">
+                <el-input v-model="scope.row.tableName"></el-input>
+            </template>
+        </el-table-column>
+        <el-table-column prop="modelName" label="实体名" width="250" >
+            <template slot-scope="scope">
+                <el-input v-model="scope.row.modelName"></el-input>
+            </template>
+        </el-table-column>
+        <el-table-column prop="mapperName" label="映射文件" width="250" >
+            <template slot-scope="scope">
+                <el-input v-model="scope.row.mapperName"></el-input>
+            </template>
+        </el-table-column>
+        <el-table-column prop="serviceName" label="业务逻辑层" width="250" >
+            <template slot-scope="scope">
+                <el-input v-model="scope.row.serviceName"></el-input>
+            </template>
+        </el-table-column>
+        <el-table-column prop="controllerName" label="控制层" width="250" >
+            <template slot-scope="scope">
+                <el-input v-model="scope.row.controllerName"></el-input>
+            </template>
+        </el-table-column>
+    </el-table>
+    <div>
+        <el-radio-group v-model="dt.tableData.type">
+            <el-radio :label="1" >MVC架构</el-radio>
+            <el-radio :label="2" >以表分类的MVC架构</el-radio>
+        </el-radio-group>
+        <el-button type="primary" size="medium" @click="createCode()" style="margin-top: 10px;" >生成代码</el-button>
+        <span style="color: red">{{dt.createMsg}}</span>
+    </div>
+</div>
+</body>
+<script>
+    new Vue({
+        el:"#app",
+        data:function() {
+            return {
+                dt:{
+                    pre:"jdbc:mysql://",
+                    append:"?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=UTC&rewriteBatchedStatements=true",
+                    msg:"数据库未连接",
+                    connectButtonEnable: false,
+                    tableData:{
+                        data:null,
+                        type:1,
+                        msg:"暂无数据"
+                    },
+                    createMsg:""
+                },
+                db:{
+                    username:"",
+                    password:"",
+                    url:"",
+                    dbVersion:8,
+                    config:""
+                }
+            }
+        },
+        methods:{
+            createCode(){
+                var _this = this;
+                var data = {
+                    type: 1,
+                    tableList: null
+                }
+                data.tableList = this.dt.tableData.data;
+                data.type = this.dt.tableData.type;
+                axios.post('/createCode', data)
+                .then(function (response) {
+                    //请求成功
+                    // console.log(response.data);
+                    _this.dt.createMsg = "创建成功，文件路径为：" + response.data.data + "\\";
+                }).catch(function (error) {
+                    //请求失败
+                    console.log(error);
+                });
+            },
+            targetAppend() {
+                if(this.db.dbVersion === 8) {
+                    this.dt.append = "?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=UTC&rewriteBatchedStatements=true";
+                }
+                if(this.db.dbVersion === 5) {
+                    this.dt.append = "?useUnicode=true&useSSL=false";
+                }
+                // console.log(this.dt.append);
+            },
+            connection() {
+                //请求连接
+                this.dt.msg = "正在连接数据库...";
+                var _this = this;
+                var data = {
+                    username: this.db.username,
+                    password: this.db.password,
+                    url: "jdbc:mysql://" + this.db.url + this.dt.append,
+                    version: this.db.dbVersion
+                };
+                axios.post('/connection', data)
+                .then(function (response) { //请求成功
+                    _this.showMessage(response.data);
+                })
+                .catch(function (error) {   //请求失败
+                    _this.showMessage(error.data);
+                });
+            },
+            config() {
+                var _this = this;
+                axios.post('/config', {'packageName':_this.db.config})
+                .then(function (response) { //请求成功
+                    // console.log(response.data);
+                    _this.showMessage(response.data);
+                    _this.dt.tableData = response.data;
+                })
+                .catch(function (error) {   //请求失败
+                    console.log(error);
+                    _this.showMessage(error.data);
+                });
+            },
+            showMessage(data) {
+                var type = "";
+                if(data.code === 200) {
+                    type = "success";
+                    this.dt.msg = "数据库连接成功！"
+                }else if(data.code === 500){
+                    type = "error";
+                    this.dt.msg = "数据库连接失败！"
+                }else{
+                    type = "warning"
+                    this.dt.msg = "程序错误！"
+                }
+                this.$message({
+                    showClose: false,
+                    message: data.msg,
+                    type: type
+                });
+            },
+            reset() {
+                this.db.username = "";
+                this.db.password = "";
+                this.db.url = "";
+            }
+        }
+    })
+</script>
+</html>
